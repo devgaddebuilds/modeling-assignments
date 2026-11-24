@@ -44,7 +44,7 @@ on the slides, plus `outputs/auction_profit.png`.
 | Folder | Chart | Detail file |
 |---|---|---|
 | `regression_used_cars/` | `predicted_vs_actual_test.png` (and a `_compact` version with larger text) | `auction_decisions.csv` |
-| `decision_tree_clinic/` | `tree.png` | none |
+| `decision_tree_clinic/` | `tree.png` (and a `_compact` version), `cost_per_appointment.png` | none |
 | `clustering_gym/` | `elbow_train_test.png` | `member_segments.csv` |
 
 ## Choices that apply to all three

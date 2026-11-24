@@ -206,37 +206,86 @@ HOLD_FILL, OVERBOOK_FILL, SPLIT_FILL = "#cde2fb", "#fbd9c9", "#ffffff"
 plt.rcParams.update({"font.family": "DejaVu Sans", "text.color": INK})
 
 n_leaves = len(leaves)
-fig, ax = plt.subplots(figsize=(max(8.0, 2.3 * n_leaves), 1.9 * (v1.get_depth() + 1)), dpi=200)
-annotations = plot_tree(v1, feature_names=FEATURES, ax=ax, impurity=False, fontsize=9)
-# plot_tree also returns the "True"/"False" branch labels; drop them and keep
-# the node boxes, which come back in node-id order.
-branch_labels = [a for a in annotations if a.get_text().strip() in ("True", "False")]
-for a in branch_labels:
-    a.set_visible(False)
-node_boxes = [a for a in annotations if a not in branch_labels]
-assert len(node_boxes) == tree.node_count
-for i, ann in enumerate(node_boxes):
-    assert f"samples = {node_n[i]}" in ann.get_text(), "node order mismatch"
-    share = node_noshow[i] / node_n[i]
-    body = f"{node_n[i]} appointments\n{share:.0%} no-show"
-    if tree.children_left[i] == -1:
-        decision = "OVERBOOK" if node_pred[i] == 1 else "HOLD"
-        ann.set_text(f"Leaf {i}\n{body}\n{decision}")
-        fill = OVERBOOK_FILL if node_pred[i] == 1 else HOLD_FILL
-    else:
-        ann.set_text(f"{node_rule(i)} ?\n{body}")
-        fill = SPLIT_FILL
-    ann.set_color(INK)
-    ann.set_bbox(dict(boxstyle="round,pad=0.4", facecolor=fill, edgecolor=MUTED,
-                      linewidth=0.8))
-    if ann.arrow_patch is not None:
-        ann.arrow_patch.set_color(MUTED)
-ax.set_title(f"v1 tree (depth {v1.get_depth()}), counts from the {len(train)} training "
-             "appointments.  Left branch = yes, right branch = no.",
-             loc="left", fontsize=10, color=INK)
-fig.tight_layout()
-fig.savefig(OUT / "tree.png", facecolor="white")
-plt.close(fig)
+
+
+def node_question(i):
+    """The split at node i as a plain yes/no question. Yes goes left."""
+    feature, threshold = FEATURES[tree.feature[i]], tree.threshold[i]
+    if feature == "sms_reminder":
+        return "No SMS reminder?"
+    if feature == "new_patient":
+        return "Returning patient?"
+    if feature == "prior_no_shows":
+        most = int(np.floor(threshold))
+        return "No prior no-shows?" if most == 0 else f"Prior no-shows: {most} or fewer?"
+    label = {"lead_time_days": "Lead time (days)", "age": "Age",
+             "distance_miles": "Distance (miles)",
+             "appointment_hour": "Appointment hour"}[feature]
+    return f"{label} at most {threshold:g}?"
+
+
+def draw_tree(filename, figsize, dpi, font, title):
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+    annotations = plot_tree(v1, feature_names=FEATURES, ax=ax, impurity=False, fontsize=font)
+    # plot_tree also returns the "True"/"False" branch labels; drop them and keep
+    # the node boxes, which come back in node-id order.
+    branch_labels = [a for a in annotations if a.get_text().strip() in ("True", "False")]
+    for a in branch_labels:
+        a.set_visible(False)
+    node_boxes = [a for a in annotations if a not in branch_labels]
+    assert len(node_boxes) == tree.node_count
+    for i, ann in enumerate(node_boxes):
+        assert f"samples = {node_n[i]}" in ann.get_text(), "node order mismatch"
+        share = node_noshow[i] / node_n[i]
+        body = f"{node_n[i]} appointments\n{share:.0%} no-show"
+        if tree.children_left[i] == -1:
+            decision = "OVERBOOK" if node_pred[i] == 1 else "HOLD"
+            ann.set_text(f"Leaf {i}\n{body}\n{decision}")
+            fill = OVERBOOK_FILL if node_pred[i] == 1 else HOLD_FILL
+        else:
+            ann.set_text(f"{node_question(i)}\n{body}")
+            fill = SPLIT_FILL
+        ann.set_color(INK)
+        ann.set_bbox(dict(boxstyle="round,pad=0.4", facecolor=fill, edgecolor=MUTED,
+                          linewidth=0.8))
+        if ann.arrow_patch is not None:
+            ann.arrow_patch.set_color(MUTED)
+    ax.set_title(title, loc="left", fontsize=font + 1, color=INK)
+    fig.tight_layout()
+    fig.savefig(OUT / filename, facecolor="white")
+    plt.close(fig)
+
+
+# Full-size picture, and a compact one with larger text for a small spot on a slide.
+draw_tree("tree.png", (max(8.0, 2.3 * n_leaves), 1.9 * (v1.get_depth() + 1)), 200, 9,
+          f"v1 tree (depth {v1.get_depth()}), counts from the {len(train)} training "
+          "appointments.  Left branch = yes, right branch = no.")
+draw_tree("tree_compact.png", (1.6 * n_leaves, 1.05 * (v1.get_depth() + 1)), 300, 8,
+          f"Counts from the {len(train)} training appointments. Left = yes, right = no.")
+
+# ---------------------------------------------------------------- value chart
+BLUE, ORANGE, GRID = "#2a78d6", "#eb6834", "#e4e3df"
+with plt.rc_context({"font.size": 9, "axes.edgecolor": MUTED, "axes.labelcolor": INK,
+                     "xtick.color": INK, "ytick.color": MUTED,
+                     "axes.spines.top": False, "axes.spines.right": False}):
+    costs = [-base_m["value_per_appointment"], -v1_m["value_per_appointment"]]
+    fig, ax = plt.subplots(figsize=(4.0, 3.0), dpi=300)
+    bars = ax.bar(["Baseline\nhold every slot", "v1\noverbook predicted no-shows"], costs,
+                  width=0.5, color=[ORANGE, BLUE])
+    for bar, cost in zip(bars, costs):
+        ax.text(bar.get_x() + bar.get_width() / 2, cost + max(costs) * 0.03, f"${cost:,.2f}",
+                ha="center", va="bottom", fontsize=10, fontweight="bold", color=INK)
+    ax.set_ylim(0, max(costs) * 1.2)
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"${v:,.0f}"))
+    ax.grid(axis="y", color=GRID, linewidth=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(axis="x", length=0)
+    ax.set_ylabel("Cost per appointment")
+    fig.suptitle(f"Cost per appointment ({len(test)} test appointments)",
+                 x=0.03, ha="left", fontsize=10, fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(OUT / "cost_per_appointment.png", facecolor="white")
+    plt.close(fig)
 
 # ---------------------------------------------------------------- results file
 lines = []
@@ -318,8 +367,10 @@ gain_each = v1_m["value_per_appointment"] - base_m["value_per_appointment"]
 add(f"\n- v1 minus baseline, {len(test)} test appointments: ${gain_total:,.0f}")
 add(f"- v1 minus baseline, per appointment: ${gain_each:,.2f}")
 if ANNUAL_APPOINTMENTS:
-    add(f"- Per year at an assumed {ANNUAL_APPOINTMENTS:,} appointments: "
-        f"${gain_each * ANNUAL_APPOINTMENTS:,.0f}")
+    add(f"\nPer year, at an assumed {ANNUAL_APPOINTMENTS:,} appointments:\n")
+    add(f"- Baseline: ${base_m['value_per_appointment'] * ANNUAL_APPOINTMENTS:,.0f}")
+    add(f"- v1: ${v1_m['value_per_appointment'] * ANNUAL_APPOINTMENTS:,.0f}")
+    add(f"- v1 minus baseline: ${gain_each * ANNUAL_APPOINTMENTS:,.0f}")
 else:
     add("- Per year: not computed. Set ANNUAL_APPOINTMENTS at the top of `analysis.py` to "
         "the yearly volume you assume; the figure is the per-appointment gain times that volume.")

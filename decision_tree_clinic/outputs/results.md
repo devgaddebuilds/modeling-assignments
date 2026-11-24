@@ -94,4 +94,9 @@ Cost table: overbooked and patient came $-60, held and patient missed $-120, oth
 
 - v1 minus baseline, 120 test appointments: $1,440
 - v1 minus baseline, per appointment: $12.00
-- Per year at an assumed 10,000 appointments: $120,000
+
+Per year, at an assumed 10,000 appointments:
+
+- Baseline: $-270,000
+- v1: $-150,000
+- v1 minus baseline: $120,000

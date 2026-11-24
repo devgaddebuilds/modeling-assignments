@@ -94,4 +94,4 @@ Cost table: overbooked and patient came $-60, held and patient missed $-120, oth
 
 - v1 minus baseline, 120 test appointments: $1,440
 - v1 minus baseline, per appointment: $12.00
-- Per year: not computed. Set ANNUAL_APPOINTMENTS at the top of `analysis.py` to the yearly volume you assume; the figure is the per-appointment gain times that volume.
+- Per year at an assumed 10,000 appointments: $120,000

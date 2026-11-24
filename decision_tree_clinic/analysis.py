@@ -37,9 +37,9 @@ DEPTH_CANDIDATES = [1, 2, 3, 4, 5, 6]
 # training set (the test set is never used). Set a number to override by hand.
 DEPTH_OVERRIDE = None
 
-# Appointments per year at the clinic. This is YOUR assumption to state on the
-# slide. Leave as None to skip the per-year line, or set e.g. 12000.
-ANNUAL_APPOINTMENTS = None
+# Appointments per year at the clinic. This is an assumption, stated on the
+# slide. Set to None to skip the per-year line.
+ANNUAL_APPOINTMENTS = 10_000
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"

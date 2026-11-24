@@ -269,13 +269,14 @@ with plt.rc_context({"font.size": 9, "axes.edgecolor": MUTED, "axes.labelcolor":
                      "xtick.color": INK, "ytick.color": MUTED,
                      "axes.spines.top": False, "axes.spines.right": False}):
     costs = [-base_m["value_per_appointment"], -v1_m["value_per_appointment"]]
-    fig, ax = plt.subplots(figsize=(4.0, 3.0), dpi=300)
+    fig, ax = plt.subplots(figsize=(4.4, 2.1), dpi=300)   # wide and short, to sit under a table
     bars = ax.bar(["Baseline\nhold every slot", "v1\noverbook predicted no-shows"], costs,
                   width=0.5, color=[ORANGE, BLUE])
     for bar, cost in zip(bars, costs):
         ax.text(bar.get_x() + bar.get_width() / 2, cost + max(costs) * 0.03, f"${cost:,.2f}",
                 ha="center", va="bottom", fontsize=10, fontweight="bold", color=INK)
-    ax.set_ylim(0, max(costs) * 1.2)
+    ax.set_ylim(0, max(costs) * 1.3)
+    ax.yaxis.set_major_locator(plt.MultipleLocator(10))
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _: f"${v:,.0f}"))
     ax.grid(axis="y", color=GRID, linewidth=0.8)
     ax.set_axisbelow(True)

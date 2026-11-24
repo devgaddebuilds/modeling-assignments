@@ -231,7 +231,11 @@ def draw_tree(filename, figsize, dpi, font, title):
     # the node boxes, which come back in node-id order.
     branch_labels = [a for a in annotations if a.get_text().strip() in ("True", "False")]
     for a in branch_labels:
-        a.set_visible(False)
+        if title:
+            a.set_visible(False)             # the title explains the branches
+        else:                                # no title: label the two root branches
+            a.set_text("yes" if a.get_text().strip() == "True" else "no")
+            a.set_color(MUTED)
     node_boxes = [a for a in annotations if a not in branch_labels]
     assert len(node_boxes) == tree.node_count
     for i, ann in enumerate(node_boxes):
@@ -250,8 +254,9 @@ def draw_tree(filename, figsize, dpi, font, title):
                           linewidth=0.8))
         if ann.arrow_patch is not None:
             ann.arrow_patch.set_color(MUTED)
-    ax.set_title(title, loc="left", fontsize=font + 1, color=INK)
-    fig.tight_layout()
+    if title:
+        ax.set_title(title, loc="left", fontsize=font + 1, color=INK)
+    fig.tight_layout(pad=0.3)
     fig.savefig(OUT / filename, facecolor="white")
     plt.close(fig)
 
@@ -260,8 +265,7 @@ def draw_tree(filename, figsize, dpi, font, title):
 draw_tree("tree.png", (max(8.0, 2.3 * n_leaves), 1.9 * (v1.get_depth() + 1)), 200, 9,
           f"v1 tree (depth {v1.get_depth()}), counts from the {len(train)} training "
           "appointments.  Left branch = yes, right branch = no.")
-draw_tree("tree_compact.png", (1.6 * n_leaves, 1.05 * (v1.get_depth() + 1)), 300, 8,
-          f"Counts from the {len(train)} training appointments. Left = yes, right = no.")
+draw_tree("tree_compact.png", (1.6 * n_leaves, 0.9 * (v1.get_depth() + 1)), 300, 8, None)
 
 # ---------------------------------------------------------------- value chart
 BLUE, ORANGE, GRID = "#2a78d6", "#eb6834", "#e4e3df"

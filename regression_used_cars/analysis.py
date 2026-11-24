@@ -171,32 +171,48 @@ plt.rcParams.update({
     "axes.spines.top": False, "axes.spines.right": False,
 })
 
-fig, ax = plt.subplots(figsize=(7.2, 5.4), dpi=200)
 lo = min(test_actual.min(), test_pred_v1.min()) - 1500
 hi = max(test_actual.max(), test_pred_v1.max()) + 1500
-ax.plot([lo, hi], [lo, hi], color=MUTED, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
-ax.axhline(baseline_price, color=ORANGE, linewidth=2, zorder=2)
-ax.scatter(test_actual, test_pred_v1, s=34, color=BLUE, edgecolor="white",
-           linewidth=0.8, zorder=3)
-ax.text(lo + 600, baseline_price + 400, f"Baseline: ${baseline_price:,.0f}\nfor every car",
-        ha="left", va="bottom", color=INK, fontsize=10)
-ax.text(hi - 600, lo + 1200, "Dashed line = perfect prediction",
-        ha="right", va="bottom", color=MUTED, fontsize=10)
-ax.set_xlim(lo, hi)
-ax.set_ylim(lo, hi)
-ax.set_aspect("equal")
-ax.grid(color=GRID, linewidth=0.8)
-ax.set_axisbelow(True)
 fmt = matplotlib.ticker.FuncFormatter(lambda v, _: f"${v / 1000:,.0f}k")
-ax.xaxis.set_major_formatter(fmt)
-ax.yaxis.set_major_formatter(fmt)
-ax.set_xlabel("Actual sale price")
-ax.set_ylabel("Predicted sale price (v1)")
-ax.set_title(f"Predicted vs actual sale price, {len(test)} test cars",
-             loc="left", fontsize=12, fontweight="bold")
-fig.tight_layout()
-fig.savefig(OUT / "predicted_vs_actual_test.png", facecolor="white")
-plt.close(fig)
+
+
+def draw_chart(filename, figsize, dpi, font, marker, tick_step, title_across_figure=False):
+    """Predicted vs actual sale price for the test cars."""
+    with plt.rc_context({"font.size": font}):
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        ax.plot([lo, hi], [lo, hi], color=MUTED, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+        ax.axhline(baseline_price, color=ORANGE, linewidth=2, zorder=2)
+        ax.scatter(test_actual, test_pred_v1, s=marker, color=BLUE, edgecolor="white",
+                   linewidth=0.8, zorder=3)
+        ax.text(lo + 600, baseline_price + 400,
+                f"Baseline: ${baseline_price:,.0f}\nfor every car",
+                ha="left", va="bottom", color=INK, fontsize=font - 1)
+        ax.text(hi - 600, lo + 1200, "Dashed line = perfect prediction",
+                ha="right", va="bottom", color=MUTED, fontsize=font - 1)
+        ax.set_xlim(lo, hi)
+        ax.set_ylim(lo, hi)
+        ax.set_aspect("equal")
+        ax.grid(color=GRID, linewidth=0.8)
+        ax.set_axisbelow(True)
+        for axis in (ax.xaxis, ax.yaxis):
+            axis.set_major_locator(matplotlib.ticker.MultipleLocator(tick_step))
+            axis.set_major_formatter(fmt)
+        ax.set_xlabel("Actual sale price")
+        ax.set_ylabel("Predicted sale price (v1)")
+        title = f"Predicted vs actual sale price, {len(test)} test cars"
+        if title_across_figure:      # the title is wider than the plot, so span the figure
+            fig.suptitle(title, x=0.03, ha="left", fontsize=font + 1, fontweight="bold")
+        else:
+            ax.set_title(title, loc="left", fontsize=font + 1, fontweight="bold")
+        fig.tight_layout()
+        fig.savefig(OUT / filename, facecolor="white")
+        plt.close(fig)
+
+
+# Full-size chart, and a compact one with larger text for a small spot on a slide.
+draw_chart("predicted_vs_actual_test.png", (7.2, 5.4), 200, 11, 34, 5000)
+draw_chart("predicted_vs_actual_test_compact.png", (4.0, 3.5), 300, 9, 20, 10000,
+           title_across_figure=True)
 
 # ---------------------------------------------------------------- results file
 lines = []

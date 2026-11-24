@@ -25,6 +25,14 @@ python3 -m venv .venv
 
 Each script prints its results and rewrites the files in its `outputs/` folder.
 
+The used car folder also has `slide_exhibits.py`. It runs the same analysis and
+writes `outputs/slide_exhibits.html`, one page with the tables and charts used
+on the slides, plus `outputs/auction_profit.png`.
+
+```
+.venv/bin/python regression_used_cars/slide_exhibits.py
+```
+
 ## What is in each folder
 
 - `data/`: the CSV files supplied with the assignment, unchanged.
